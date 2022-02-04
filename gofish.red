@@ -98,7 +98,7 @@ ai: func [] [
 turn: [
 	until [
 		either (active_player = "human") [
-			book-check human_hand human_books
+			book-check computer_hand computer_books
 			print [newline "Your hand: " newline] contents human_hand print newline 
 			
 			until [
@@ -108,7 +108,7 @@ turn: [
 			active_hand: human_hand active_books: human_books 
 			passive_hand: computer_hand passive_books: computer_books
 		] [
-			book-check computer_hand computer_books
+			book-check human_hand human_books
 			
 			choice: ai 
 			print [newline "Computer's choice: " choice newline]
