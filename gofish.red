@@ -67,7 +67,7 @@ give: func [request giver_hand asker_hand] [
 	giver_hand: head giver_hand
 ]
 
-book-check: func [hand player_books] [ ;add book number tracking
+book-check: func [hand player_books] [ print "checking the books"
 	completed: copy []
 	foreach book books [ 
 		counter: 0 record: clear [] 
@@ -95,20 +95,20 @@ ai: func [] [
 ]
 
 ;game flow
-turn: [
-	until [
+turn: [ counter: 0
+	until [ print computer_hand  
 		either (active_player = "human") [
-			book-check computer_hand computer_books
+			computer_hand: book-check computer_hand computer_books
 			print [newline "Your hand: " newline] contents human_hand print newline 
 			
-			until [
+			until [ probe human_hand
 				search (choice: request) human_hand 
 			]
 			
 			active_hand: human_hand active_books: human_books 
 			passive_hand: computer_hand passive_books: computer_books
 		] [
-			book-check human_hand human_books
+			human_hand: book-check human_hand human_books
 			
 			choice: ai 
 			print [newline "Computer's choice: " choice newline]
@@ -119,7 +119,7 @@ turn: [
 		
 		either (search choice passive_hand) [
 			give choice passive_hand active_hand
-			book-check active_hand active_books		
+			active_hand: book-check active_hand active_books		
 			empty-check passive_hand  
 		] [
 			fish active_hand active_player choice
