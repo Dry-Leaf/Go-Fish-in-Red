@@ -1,148 +1,171 @@
-Red [Purpose: "Go Fish"]
+Red [Purpose: "go fish in Red, attempt 3"]
 #include %pc.red
 random/seed now/time
 
 players: ["human" "computer" "human" "computer"]
 
 ;processes
-setup: do [
-	pool: shuffle make-deck
-	books: copy pip
-	ai-fish: none
-	computer_hand: clear [] computer_books: 0
-	human_hand: clear [] human_books: 0
-	loop 9 [deal human_hand pool deal computer_hand pool]
-	active_player: random/only players
-] 
+setup: function [/extern 
+	pool 
+	human_hand computer_hand 
+	human_books computer_books 
+	books 
+	ai_fish 
+	active_player
+] [
+		pool: shuffle make-deck
+		human_hand: clear []
+		computer_hand: clear []
+		human_books: copy [0]
+		computer_books: copy [0]
+		books: copy pip
+		ai_fish: none
 
-empty-check: func [hand] [
+		loop 9 [
+			deal human_hand pool
+			deal computer_hand pool
+		]
+		active_player: random/only players
+]
+
+empty-check: function [hand] [
 	if (empty? hand) [deal hand pool] 
 ]
 
-request: func [] [
+request: function [] [
 	input: ask "Request a pip in your deck(quit to exit game): "
 	if input = "quit" [halt]
 
 	either not (none? find pip input) [
-		return input
+		input
 	] [
 		print "invalid input" request
-	]
-]
+]]
 
-search: func [request hand] [  
+search: function [
+	request hand
+] [
 	foreach card hand [
-		if (first card) = request [ 
-			return true
-		]
+		if card/1 = request [return true]
 	]
-	return false 
+	false
 ]
 
-fish: func [hand player request] [
-	print [newline "Go Fish" newline]  
-	either player = "human" [
-		deal hand pool
-	] [
-		deal hand pool
-		if (search first last hand take/deep/part copy hand ((length? hand) - 1)) = false [ ;only one instance of pip
-			 ai-fish: first last hand
+fish: function [
+	hand player request 
+	/extern 
+	pool ai_fish
+] [
+	print ["Go Fish" newline]  
+	deal hand pool
+	last_pip: hand/(length? hand)/1
+
+	if player = "computer" [
+		if (search last_pip (copy/part hand (length? hand) - 1)) = false [
+			ai_fish: last_pip
 		]
 	]
-	if (first last hand) = request [
-		print ["Drawn card: "] contents reduce [take/deep/last copy hand] print newline
-	]
-	wait 1 
-	return true
-]
+	if last_pip = request [
+		prin ["Drawn Card: "] contents reduce [hand/(length? hand)]
+]]
 
-give: func [request giver_hand asker_hand] [
+
+give: function [
+	request giver_hand asker_hand
+] [
 	while [not (empty? giver_hand)] [ 
-		either ((first first giver_hand) = request) [
+		either (giver_hand/1/1 = request) [
 			move giver_hand asker_hand 
 		] [
 			giver_hand: next giver_hand
 		]
-	]
-	giver_hand: head giver_hand
-]
+]]
 
-book-check: func [hand player_books] [ print "checking the books"
-	completed: copy []
-	foreach book books [ 
-		counter: 0 record: clear [] 
-		repeat card-numb length? hand [
-			if (first hand/:card-numb) = book [
-				counter: counter + 1 append/only record hand/:card-numb
+book-check: function [
+	hand player_books
+	/extern
+	books
+] [
+	completed: clear []
+	foreach book books [
+		counter: 0 record: clear []
+		repeat card_numb length? hand [
+			if hand/:card_numb/1 = book [
+				counter: counter + 1
+				append/only record hand/:card_numb
 		]]
 		if counter = 4 [
-			hand: exclude hand record
+			head clear insert hand exclude hand record
 			append completed book
-			player_books: player_books + 1
-		] 
+			player_books/1: player_books/1 + 1
+			print ["Book: " book "completed." newline]
+		]
 	]
 	foreach book completed [remove find books book]
-	hand 
 ]
 
-ai: func [] [
+ai: function [
+	/extern
+	ai_fish
+] [
 	either (none? ai-fish) [
-		return first random/only computer_hand 
+		first random/only computer_hand 
 	] [
-		request: ai-fish ai-fish: none 
-		return request 
-	]
-]
+		computer_request: ai-fish ai-fish: none 
+		computer_request 
+]]
 
 ;game flow
-turn: [ counter: 0
-	until [ print computer_hand  
-		either (active_player = "human") [
-			computer_hand: book-check computer_hand computer_books
-			print [newline "Your hand: " newline] contents human_hand print newline 
-			
-			until [ probe human_hand
-				search (choice: request) human_hand 
-			]
-			
-			active_hand: human_hand active_books: human_books 
+turn: function [
+	/extern
+	active_player pool
+] [
+	forever [
+		either active_player = "human" [
+			active_hand: human_hand active_books: human_books
 			passive_hand: computer_hand passive_books: computer_books
 		] [
-			human_hand: book-check human_hand human_books
-			
-			choice: ai 
-			print [newline "Computer's choice: " choice newline]
-			
-			active_hand: computer_hand active_books: computer_books 
+			active_hand: computer_hand active_books: computer_books
 			passive_hand: human_hand passive_books: human_books
-		]		
-		
-		either (search choice passive_hand) [
+		]
+
+		book-check active_hand active_books
+		book-check passive_hand passive_books
+		empty-check active_hand empty-check passive_hand
+	
+		if tail? active_hand [break]
+
+		either active_player = "human" [
+			print "Your hand: " contents human_hand print newline 
+			until [
+				search (choice: request) human_hand
+			]
+		] [
+			choice: ai print ["Computer's choice: " choice]
+		]
+
+		either (search choice passive_hand) = true [
 			give choice passive_hand active_hand
-			active_hand: book-check active_hand active_books		
-			empty-check passive_hand  
 		] [
 			fish active_hand active_player choice
-		]
-	] 
+			break
+	]]
 
-	print [newline "Remaining Books: " books newline]
-	
 	active_player: select players active_player
+	print ["Remaining Books" reduce books] ask ""
 ]
-  
-demo: does [
+
+demo: function [] [
 	setup
-	while [computer_books + human_books < 13] [
-		do turn
+	while [computer_books/1 + human_books/1 < 13] [
+		turn
 	]
-	print [newline "Computer books:" computer_books newline "Player books:" human_books]
-	either (human_books > computer_books) [
+	print ["Computer Books: " computer_books/1 "^/Human Books: " human_books/1]
+	either human_books/1 > computer_books/1 [
 		print "You Win"
 	] [
-		print "You Lose"
-	]
-]
+		print "You lose"
+]]
 
-;testing bay 
+;testing bay
 demo
