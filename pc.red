@@ -18,7 +18,9 @@ contents: function [deck [block!]] [
 	repeat i length? deck [
 		prin [trim/all form deck/:i " "]
 		if (to-integer i / 13) > line [line: line + 1 print ""]
-]]
+	]
+	print ""
+]
 
 {deck: shuffle make-deck
 print "40 cards from a deck:"
