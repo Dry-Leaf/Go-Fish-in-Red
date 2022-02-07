@@ -5,14 +5,7 @@ random/seed now/time
 players: ["human" "computer" "human" "computer"]
 
 ;processes
-setup: function [/extern 
-	pool 
-	human_hand computer_hand 
-	human_books computer_books 
-	books 
-	ai_fish 
-	active_player
-] [
+setup: [
 		pool: shuffle make-deck
 		human_hand: clear []
 		computer_hand: clear []
@@ -156,7 +149,7 @@ turn: function [
 ]
 
 demo: function [] [
-	setup
+	do setup
 	while [computer_books/1 + human_books/1 < 13] [
 		turn
 	]
