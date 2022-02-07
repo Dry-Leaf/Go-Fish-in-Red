@@ -88,7 +88,8 @@ book-check: function [
 				append/only record hand/:card_numb
 		]]
 		if counter = 4 [
-			head clear insert hand exclude hand record
+			rem_cards: exclude hand record
+			clear insert hand rem_cards
 			append completed book
 			player_books/1: player_books/1 + 1
 			print ["Book: " book "completed." newline]
